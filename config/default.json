@@ -1,0 +1,25 @@
+{
+    "logger": {
+        "level": "debug"
+    },
+    "http": {
+        "port": 8080
+    },
+    "redis": {
+        "prefix": "node-koa-ws-ts:",
+        "host": "127.0.0.1",
+        "port": 6379
+    },
+    "db": {
+        "host": "localhost",
+        "port": 3306,
+        "username": "root",
+        "password": "123!@#qweQWE",
+        "database": "node-koa-ws-ts",
+        "tablePrefix": "nkwt_"
+    },
+    "jwt": {
+        "secret": "your-secret-whatever",
+        "expires": "1h"
+    } 
+}

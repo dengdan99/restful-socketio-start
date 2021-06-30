@@ -1,0 +1,129 @@
+<html><head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Sample of web_socket.js</title>
+  
+  <!-- Include these three JS files: -->
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+  <script type="text/javascript" src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+
+  <script type="text/javascript">
+    
+    var api_host = 'http://localhost:8080'
+    var ws;
+    var timer
+    
+    function init(token) {
+
+      // Connect to Web Socket.
+      // Change host/port here to your own Web Socket server.
+      ws = io(api_host, { 
+        // path: '/chat',
+        query: { room_id: 1, token },
+        transport : ['websocket']
+      });
+      
+      ws.on('connect', () => {
+        output("connect");
+      });
+      ws.on('error', (e) => {
+        output(e);
+      });
+      ws.on('message',data =>{
+        output("onmessage: " + data);
+      });
+      ws.on('disconnect', () => {
+        output("disconnect");
+      });
+      ws.on("connect_error", err => {
+        console.log(err.message); // not authorized
+        console.log(err.data); // { content: "Please retry later" }
+      })
+      ws.on('rank', (data) => {
+        var rank = document.getElementById("rank");
+        rank.innerHTML = '';
+        data.forEach(item => {
+          var li = document.createElement('p');
+          li.innerHTML = item[0] + ': ' + item[1];
+          rank.appendChild(li);
+        })
+      })
+    }
+    
+    function onSubmit() {
+      var input = document.getElementById("input");
+      var to = document.getElementById("to");
+      // You can send message to the Web Socket using ws.send.
+      ws.send({
+        content: input.value,
+        to: to.value
+      });
+      // output("send: " + input.value);
+      input.value = "";
+      input.focus();
+    }
+    
+    function onCloseClick() {
+      ws.close();
+    }
+    
+    function output(str) {
+      var log = document.getElementById("log");
+      var escaped = str.replace(/&/, "&amp;").replace(/</, "&lt;").
+        replace(/>/, "&gt;").replace(/"/, "&quot;"); // "
+      log.innerHTML = escaped + "<br>" + log.innerHTML;
+    }
+    
+    var count = 0
+    function pushMessage() {
+      timer = setInterval(function() {
+        ws.emit('concurrent', Math.floor(Math.random() * 10))
+        // ws.send(Math.floor(Math.random() * 1000))
+      }, 1000)
+    }
+
+    function onLogin () {
+      $.post(api_host + '/general/login', {
+        name: document.getElementById("name").value,
+        password: document.getElementById("pwd").value,
+      }, (res) => {
+        if (res.code === 0) {
+          document.getElementById("token").innerHTML = res.data.token;
+          init(res.data.token)
+        } else {
+          alert(res.msg)
+        }
+      })
+    }
+  </script>
+</head>
+  <body>
+    <form onsubmit="onLogin(); return false;">
+      <input type="text" id="name" value="leo">
+      <input type="text" id="pwd" value="123456">
+      <button type="submit">登陆</button>
+      <span id="token"></span>
+    </form>
+    <form onsubmit="onSubmit(); return false;">
+      <select id="to">
+        <option value="">全部</option>
+        <option value="1">leo</option>
+        <option value="6">leo2</option>
+        <option value="7">leo3</option>
+        <option value="8">leo4</option>
+      </select>
+      <input type="text" id="input">
+      <input type="submit" value="Send">
+      <button onclick="onCloseClick(); return false;">close</button>
+    </form>
+    <p>
+      <button onclick="pushMessage()">并发消息</button>
+      <button onclick="clearInterval(timer)">结束并发</button>
+    </p>
+    <p>
+      <button onclick="ws.emit('clear'); return false;">清除分数</button>
+      <button onclick="ws.emit('start/stop'); return false;">显示/不显示 统计</button>
+    </p>
+    <div id="rank"></div>
+    <div id="log"></div>
+  </body>
+</html>
